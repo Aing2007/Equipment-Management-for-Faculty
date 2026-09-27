@@ -1,6 +1,8 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const connectDB = require('./config/db');
 
 // อ่านค่าจากไฟล์ .env
@@ -13,6 +15,7 @@ connectDB();
 const authRoutes = require('./routes/auth');
 const equipmentRoutes = require('./routes/equipments');
 const roomRoutes = require('./routes/rooms');
+const operationsRoutes = require('./routes/operations');
 
 const app = express();
 
@@ -24,6 +27,17 @@ app.use(cors());
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/equipments', equipmentRoutes);
 app.use('/api/v1/rooms', roomRoutes);
+app.use('/api/v1', operationsRoutes);
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+const frontendDist = path.join(__dirname, '..', 'front', 'dist');
+if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist));
+    app.use((req, res, next) => {
+        if (req.path.startsWith('/api/')) return next();
+        res.sendFile(path.join(frontendDist, 'index.html'));
+    });
+}
 
 const PORT = process.env.PORT || 5000;
 

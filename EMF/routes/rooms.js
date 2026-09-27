@@ -13,11 +13,11 @@ const router = express.Router();
 
 router.route('/')
     .get(protect, getRooms)
-    .post(protect, authorize('personnel'), createRoom);
+    .post(protect, authorize('admin', 'personnel'), createRoom);
 
 router.route('/:id')
     .get(protect, getRoom)
-    .put(protect, authorize('personnel'), updateRoom)
-    .delete(protect, authorize('personnel'), deleteRoom);
+    .put(protect, authorize('admin', 'personnel'), updateRoom)
+    .delete(protect, authorize('admin', 'personnel'), deleteRoom);
 
 module.exports = router;

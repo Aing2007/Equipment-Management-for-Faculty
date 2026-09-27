@@ -5,14 +5,14 @@ const User = require('../models/User');
 // @access  Public
 exports.register = async (req, res, next) => {
     try {
-        const { username, password, name_sur, role } = req.body;
+        const { username, password, name_sur } = req.body;
 
         // สร้าง User ใหม่
         const user = await User.create({
             username,
             password,
             name_sur,
-            role
+            role: 'assessee'
         });
 
         sendTokenResponse(user, 201, res);
@@ -30,27 +30,27 @@ exports.login = async (req, res, next) => {
 
         // ตรวจสอบว่าใส่ username และ password หรือไม่
         if (!username || !password) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'กรุณากรอก Username และ Password' 
+            return res.status(400).json({
+                success: false,
+                message: 'กรุณากรอก Username และ Password'
             });
         }
 
         // ค้นหา User และดึง Password มาตรวจสอบด้วย
         const user = await User.findOne({ username }).select('+password');
         if (!user) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Username หรือ Password ไม่ถูกต้อง' 
+            return res.status(401).json({
+                success: false,
+                message: 'Username หรือ Password ไม่ถูกต้อง'
             });
         }
 
         // ตรวจสอบว่า Password ตรงกันหรือไม่
         const isMatch = await user.matchPassword(password);
         if (!isMatch) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Username หรือ Password ไม่ถูกต้อง' 
+            return res.status(401).json({
+                success: false,
+                message: 'Username หรือ Password ไม่ถูกต้อง'
             });
         }
 

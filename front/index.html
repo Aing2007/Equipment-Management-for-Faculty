@@ -1,69 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="th">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Equipment Management</title>
-    <link rel="stylesheet" href="/style.css" />
+    <meta name="theme-color" content="#10243a" />
+    <meta name="description" content="EMF ระบบติดตามและดูแลครุภัณฑ์สำหรับคณะ ภาควิชา และห้องปฏิบัติการ" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>EMF — Faculty Asset</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div class="container">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">Faculty Portal</p>
-          <h1>Equipment Management</h1>
-        </div>
-        <button id="refreshBtn" class="primary-btn">Refresh</button>
-      </header>
-
-      <section class="status-box">
-        <div>
-          <span class="label">API Status</span>
-          <h2 id="apiStatus">Checking...</h2>
-        </div>
-      </section>
-
-      <main class="layout">
-        <section class="panel">
-          <h3>Add New Equipment</h3>
-          <form id="equipmentForm">
-            <div class="field-grid">
-              <label>
-                Name
-                <input type="text" id="name" name="name" placeholder="e.g. Tablet" required />
-              </label>
-
-              <label>
-                Status
-                <select id="status" name="status">
-                  <option value="Available">Available</option>
-                  <option value="Borrowed">Borrowed</option>
-                  <option value="Maintenance">Maintenance</option>
-                </select>
-              </label>
-
-              <label>
-                Location
-                <input type="text" id="location" name="location" placeholder="e.g. Lab 3" required />
-              </label>
-
-              <label>
-                Owner
-                <input type="text" id="owner" name="owner" placeholder="e.g. Faculty of Science" required />
-              </label>
-            </div>
-
-            <button type="submit" class="primary-btn">Save Equipment</button>
-          </form>
-        </section>
-
-        <section class="panel">
-          <h3>Equipment List</h3>
-          <div id="equipmentList" class="equipment-list"></div>
-        </section>
-      </main>
-    </div>
-
-    <script src="/app.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
