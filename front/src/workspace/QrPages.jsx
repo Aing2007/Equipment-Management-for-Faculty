@@ -191,17 +191,25 @@ export function ScanQr() {
       const { Html5Qrcode } = await import('html5-qrcode');
       scanner = new Html5Qrcode(readerId, { verbose: false });
       scannerRef.current = scanner;
+      
       await scanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1 },
-        (decodedText) => { if (!handledRef.current) handleDecoded(decodedText); },
+        { 
+          fps: 15,  // ✨ เพิ่มจาก 10
+          qrbox: { width: 300, height: 300 },  // ✨ ขยายจาก 250
+          aspectRatio: 1,
+          useBarCodeDetectorIfSupported: true  // ✨ ใช้ API ระบบ
+        },
+        (decodedText) => { 
+          if (!handledRef.current) handleDecoded(decodedText); 
+        },
         () => {}
       );
       setScanning(true);
     } catch (cause) {
       scannerRef.current = null;
-      try { scanner?.clear(); } catch { /* A failed camera startup can leave no scanner UI to clear. */ }
-      setError(`เปิดกล้องไม่ได้ กรุณาอนุญาตการใช้กล้องและตรวจสอบว่าใช้ HTTPS หรือ localhost${cause?.message ? ` (${cause.message})` : ''}`);
+      try { scanner?.clear(); } catch { }
+      setError(`เปิดกล้องไม่ได้ กรุณาอนุญาตการใช้กล้องและตรวจสอบว่าใช้ HTTPS`);
     } finally {
       setStarting(false);
     }
