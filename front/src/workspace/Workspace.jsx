@@ -3,11 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity, ArrowRight, Barcode, Boxes, BrainCircuit, Building2, Camera,
   Check, ClipboardList, LayoutDashboard, LogOut, MapPin, Menu, MoveRight,
-  Plus, ScanLine, Search, Settings2, ShieldCheck, Sparkles, Wrench, X
+  Plus, ScanLine, ScanQrCode, Search, Settings2, ShieldCheck, Sparkles, Wrench, X
 } from 'lucide-react';
 import { api, clearToken, getToken } from '../api';
 import { cloneDemo } from '../demoData';
 import ChatbotMock from './ChatbotMock.jsx';
+import { CreateQr, ScanQr } from './QrPages.jsx';
 
 const menu = [
   { id: 'overview', label: 'ภาพรวม', icon: LayoutDashboard },
@@ -16,7 +17,9 @@ const menu = [
   { id: 'maintenance', label: 'งานซ่อมบำรุง', icon: Wrench },
   { id: 'departments', label: 'หน่วยงาน', icon: Building2 },
   { id: 'insights', label: 'AI วิเคราะห์', icon: BrainCircuit },
-  { id: 'requests', label: 'คำขอรับบริการ', icon: ClipboardList }
+  { id: 'requests', label: 'คำขอรับบริการ', icon: ClipboardList },
+  { id: 'CreateQr', label: 'สร้าง QR Code', icon: ScanQrCode },
+  { id: 'ScanQr', label: 'สแกน QR Code', icon: ScanLine }
 ];
 const statusMap = { active: 'ใช้งานปกติ', maintenance: 'อยู่ระหว่างซ่อม', retired: 'ปลดระวาง', lost: 'สูญหาย' };
 const conditionMap = { good: 'ดี', watch: 'เฝ้าระวัง', poor: 'ควรซ่อม' };
@@ -348,6 +351,8 @@ export default function Workspace() {
         </>}
         {section === 'insights' && <Insights items={data.equipments} />}
         {section === 'requests' && <Requests data={data} />}
+        {section === 'CreateQr' && <CreateQr equipments={data.equipments} />}
+        {section === 'ScanQr' && <ScanQr />}
       </>}
     </main></div>
     {selected && !modal && <AssetDetail item={selected} movements={data.movements} maintenance={data.maintenance} onClose={() => setSelected(null)} onEdit={() => setModal({ type: 'asset', item: selected })} canEdit={canEdit} />}

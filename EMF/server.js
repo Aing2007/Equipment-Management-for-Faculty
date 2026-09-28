@@ -5,11 +5,12 @@ const path = require('path');
 const fs = require('fs');
 const connectDB = require('./config/db');
 
-// อ่านค่าจากไฟล์ .env
+// อ่านค่าจากไฟล์ .env.example
+//dotenv.config({ path: path.join(__dirname, '.env.example') });
 dotenv.config();
 
 // เชื่อมต่อฐานข้อมูล MongoDB
-connectDB();
+//connectDB();
 
 // นำเข้า Routes ให้ตรงตามชื่อโฟลเดอร์ใหม่
 const authRoutes = require('./routes/auth');

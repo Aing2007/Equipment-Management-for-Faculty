@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRight, Barcode, BrainCircuit, Building2, Check, ChevronDown,
   ClipboardCheck, Clock3, MapPin, Menu, ScanLine, ShieldCheck,
-  Stethoscope, Users, Wrench, X
+  Stethoscope, Users, Wrench, X, ScanQrCode
 } from 'lucide-react';
 import { api } from '../api';
 
