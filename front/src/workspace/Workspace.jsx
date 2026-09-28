@@ -3,11 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity, ArrowRight, Barcode, Boxes, BrainCircuit, Building2, Camera,
   Check, LayoutDashboard, LogOut, MapPin, Menu, MoveRight,
-  Plus, ScanLine, ScanQrCode, Search, Settings2, ShieldCheck, Sparkles, Wrench, X
+  Plus, ScanLine, ScanQrCode, Search, Settings2, ShieldCheck, Sparkles, Users, Wrench, X
 } from 'lucide-react';
 import { api, clearToken, getToken } from '../api';
 import ChatbotMock from './ChatbotMock.jsx';
 import { CreateQr, ScanQr } from './QrPages.jsx';
+import CreditPage from './CreditPage.jsx';
 
 const menu = [
   { id: 'overview', label: 'ภาพรวม', icon: LayoutDashboard },
@@ -18,7 +19,8 @@ const menu = [
   { id: 'insights', label: 'ระบบวิเคราะห์อัจฉริยะ', icon: BrainCircuit },
   //{ id: 'requests', label: 'คำขอรับบริการ', icon: ClipboardList },
   { id: 'CreateQr', label: 'สร้าง QR Code', icon: ScanQrCode },
-  { id: 'ScanQr', label: 'สแกน QR Code', icon: ScanLine }
+  { id: 'ScanQr', label: 'สแกน QR Code', icon: ScanLine },
+  { id: 'Credit', label: 'Creditผู้พัฒนา', icon: Users }
 ];
 const statusMap = { active: 'ใช้งานปกติ', maintenance: 'อยู่ระหว่างซ่อม', retired: 'ปลดระวาง', lost: 'สูญหาย' };
 const conditionMap = { good: 'ดี', watch: 'เฝ้าระวัง', poor: 'ควรซ่อม' };
@@ -36,6 +38,16 @@ const riskFor = (item) => {
 };
 const riskText = { high: 'เร่งด่วน', medium: 'ควรติดตาม', low: 'ปกติ' };
 const initialData = { equipments: [], rooms: [], departments: [], movements: [], maintenance: [], inquiries: [] };
+const bangkokDateValue = () => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+  const dateParts = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
+};
 
 function Status({ status, type = 'asset' }) {
   const text = type === 'task' ? taskMap[status] : statusMap[status];
@@ -100,6 +112,8 @@ function Assets({ data, onCreate, onSelect, onScan }) {
 
 function AssetForm({ data, onSave, onClose, item, busy, error }) {
   const edit = Boolean(item);
+  const today = bangkokDateValue();
+  const currentYear = new Date().getFullYear();
   function submit(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -117,7 +131,7 @@ function AssetForm({ data, onSave, onClose, item, busy, error }) {
       notes: form.get('notes') || undefined
     });
   }
-  return <Modal title={edit ? 'แก้ไขครุภัณฑ์' : 'เพิ่มครุภัณฑ์ใหม่'} onClose={onClose} wide><form className="form-stack" onSubmit={submit}><div className="form-two"><label>ชื่อครุภัณฑ์<input name="name" required defaultValue={item?.name} placeholder="เช่น กล้องจุลทรรศน์" /></label><label>ประเภท<input name="type" required defaultValue={item?.type} placeholder="เช่น อุปกรณ์ห้องปฏิบัติการ" /></label></div><div className="form-two"><label>รหัสบาร์โค้ด<input name="barcode_Number" required defaultValue={item?.barcode_Number} placeholder="EMF-2569-0001" /></label><label>Smart Tag ID<input name="smartTagId" defaultValue={item?.smartTagId} placeholder="ถ้ามี" /></label></div><div className="form-three"><label>ปีที่รับเข้า<input name="year_input" type="number" min="1950" max="2100" required defaultValue={item?.year_input || new Date().getFullYear()} /></label><label>เลขซีเรียล<input name="serialNumber" defaultValue={item?.serialNumber} placeholder="ถ้ามี" /></label><label>รอบตรวจ (เดือน)<input name="maintenanceIntervalMonths" type="number" min="1" defaultValue={item?.maintenanceIntervalMonths || 12} /></label></div><div className="form-two"><label>หน่วยงาน<select name="department" defaultValue={idOf(item?.department) || ''} disabled={edit}><option value="">เลือกหน่วยงาน</option>{data.departments.map((dept) => <option value={dept._id} key={dept._id}>{dept.name}</option>)}</select></label><label>ห้อง / สถานที่<select name="room" defaultValue={idOf(item?.room) || ''} disabled={edit}><option value="">เลือกห้อง</option>{data.rooms.map((room) => <option value={room._id} key={room._id}>{room.room_code} · {room.name}</option>)}</select></label></div>{edit && <p className="form-hint">หากต้องการเปลี่ยนห้องหรือหน่วยงาน ให้บันทึกผ่านหน้า “การเคลื่อนย้าย” เพื่อเก็บประวัติ</p>}<div className="form-two"><label>สถานะ<select name="status" defaultValue={item?.status || 'active'}>{Object.entries(statusMap).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></label><label>สภาพ<select name="condition" defaultValue={item?.condition || 'good'}>{Object.entries(conditionMap).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></label></div><div className="form-two"><label>ตรวจครั้งถัดไป<input name="nextInspectionDate" type="date" defaultValue={item?.nextInspectionDate?.slice(0, 10)} /></label><label>คาดว่าเปลี่ยนทดแทน<input name="expectedReplacementDate" type="date" defaultValue={item?.expectedReplacementDate?.slice(0, 10)} /></label></div><label>หมายเหตุ<textarea name="notes" rows="3" defaultValue={item?.notes} placeholder="รายละเอียดเพิ่มเติม" /></label>{error && <div className="form-message error">{error}</div>}<div className="form-actions"><button type="button" className="button secondary" onClick={onClose}>ยกเลิก</button><button className="button primary" disabled={busy}>{busy ? 'กำลังบันทึก...' : 'บันทึกครุภัณฑ์'}</button></div></form></Modal>;
+  return <Modal title={edit ? 'แก้ไขครุภัณฑ์' : 'เพิ่มครุภัณฑ์ใหม่'} onClose={onClose} wide><form className="form-stack" onSubmit={submit}><div className="form-two"><label>ชื่อครุภัณฑ์<input name="name" required defaultValue={item?.name} placeholder="เช่น กล้องจุลทรรศน์" /></label><label>ประเภท<input name="type" required defaultValue={item?.type} placeholder="เช่น อุปกรณ์ห้องปฏิบัติการ" /></label></div><div className="form-two"><label>รหัสบาร์โค้ด<input name="barcode_Number" required defaultValue={item?.barcode_Number} placeholder="EMF-2569-0001" /></label><label>Smart Tag ID<input name="smartTagId" defaultValue={item?.smartTagId} placeholder="ถ้ามี" /></label></div><div className="form-three"><label>ปีที่รับเข้า<input name="year_input" type="number" min="1950" max={currentYear} required defaultValue={item?.year_input || currentYear} /><small className="form-hint">เลือกปีระหว่าง 1950 ถึง {currentYear}</small></label><label>เลขซีเรียล<input name="serialNumber" defaultValue={item?.serialNumber} placeholder="ถ้ามี" /></label><label>รอบตรวจ (เดือน)<input name="maintenanceIntervalMonths" type="number" min="1" defaultValue={item?.maintenanceIntervalMonths || 12} /></label></div><div className="form-two"><label>หน่วยงาน<select name="department" defaultValue={idOf(item?.department) || ''} disabled={edit}><option value="">เลือกหน่วยงาน</option>{data.departments.map((dept) => <option value={dept._id} key={dept._id}>{dept.name}</option>)}</select></label><label>ห้อง / สถานที่<select name="room" defaultValue={idOf(item?.room) || ''} disabled={edit}><option value="">เลือกห้อง</option>{data.rooms.map((room) => <option value={room._id} key={room._id}>{room.room_code} · {room.name}</option>)}</select></label></div>{edit && <p className="form-hint">หากต้องการเปลี่ยนห้องหรือหน่วยงาน ให้บันทึกผ่านหน้า “การเคลื่อนย้าย” เพื่อเก็บประวัติ</p>}<div className="form-two"><label>สถานะ<select name="status" defaultValue={item?.status || 'active'}>{Object.entries(statusMap).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></label><label>สภาพ<select name="condition" defaultValue={item?.condition || 'good'}>{Object.entries(conditionMap).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></label></div><div className="form-two"><label>ตรวจครั้งถัดไป<input name="nextInspectionDate" type="date" min={edit ? undefined : today} defaultValue={item?.nextInspectionDate?.slice(0, 10)} /><small className="form-hint">เลือกวันนี้หรือวันที่ในอนาคต (ไม่บังคับ)</small></label><label>คาดว่าเปลี่ยนทดแทน<input name="expectedReplacementDate" type="date" min={edit ? undefined : today} defaultValue={item?.expectedReplacementDate?.slice(0, 10)} /><small className="form-hint">เลือกวันนี้หรือวันที่ในอนาคต (ไม่บังคับ)</small></label></div><label>หมายเหตุ<textarea name="notes" rows="3" defaultValue={item?.notes} placeholder="รายละเอียดเพิ่มเติม" /></label>{error && <div className="form-message error">{error}</div>}<div className="form-actions"><button type="button" className="button secondary" onClick={onClose}>ยกเลิก</button><button className="button primary" disabled={busy}>{busy ? 'กำลังบันทึก...' : 'บันทึกครุภัณฑ์'}</button></div></form></Modal>;
 }
 
 function AssetDetail({ item, movements, maintenance, onClose, onEdit }) {
@@ -280,6 +294,7 @@ export default function Workspace() {
         {section === 'requests' && <Requests data={data} />}
         {section === 'CreateQr' && <CreateQr equipments={data.equipments} />}
         {section === 'ScanQr' && <ScanQr />}
+        {section === 'Credit' && <CreditPage />}
       </>}
     </main></div>
     {selected && !modal && <AssetDetail item={selected} movements={data.movements} maintenance={data.maintenance} onClose={() => setSelected(null)} onEdit={() => setModal({ type: 'asset', item: selected })} />}

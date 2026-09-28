@@ -1,5 +1,6 @@
 const Equipment = require('../models/Equipment');
 const Room = require('../models/Room');
+const { validateAssetDates } = require('../utils/assetDates');
 
 const populate = [
   { path: 'user', select: 'name_sur username' },
@@ -37,6 +38,8 @@ exports.getEquipment = async (req, res) => {
 
 exports.createEquipment = async (req, res) => {
   try {
+    const dateError = validateAssetDates(req.body);
+    if (dateError) return res.status(400).json({ success: false, message: dateError });
     if (req.body.room) {
       const room = await Room.findById(req.body.room);
       if (!room) return res.status(404).json({ success: false, message: 'ไม่พบห้องที่เลือก' });
