@@ -7,17 +7,17 @@ const {
     deleteRoom
 } = require('../controllers/rooms');
 
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.route('/')
     .get(protect, getRooms)
-    .post(protect, authorize('admin', 'personnel'), createRoom);
+    .post(protect, createRoom);
 
 router.route('/:id')
     .get(protect, getRoom)
-    .put(protect, authorize('admin', 'personnel'), updateRoom)
-    .delete(protect, authorize('admin', 'personnel'), deleteRoom);
+    .put(protect, updateRoom)
+    .delete(protect, deleteRoom);
 
 module.exports = router;

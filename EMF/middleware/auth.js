@@ -21,17 +21,3 @@ exports.protect = async (req, res, next) => {
         return res.status(401).json({ success: false, message: '401: Token invalid or expired.' });
     }
 };
-
-// 2. ตรวจสอบสิทธิ์ (Authorization)
-exports.authorize = (...roles) => {
-    return (req, res, next) => {
-        // ตรวจสอบว่า Role ของ User ที่ Login อยู่ (req.user.role) มีสิทธิ์หรือไม่
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: `403: Forbidden. Role ${req.user.role} is not authorized.`
-            });
-        }
-        next();
-    };
-};

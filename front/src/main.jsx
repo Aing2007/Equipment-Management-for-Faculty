@@ -7,7 +7,7 @@ import { getToken } from './api.js';
 import './styles.css';
 
 function EntryRedirect() {
-  const hasSession = sessionStorage.getItem('emf_demo') === '1' || Boolean(getToken());
+  const hasSession = Boolean(getToken());
   return <Navigate to={hasSession ? '/app' : '/login'} replace />;
 }
 

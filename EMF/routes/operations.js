@@ -5,14 +5,9 @@ const Department = require('../models/Department');
 const Movement = require('../models/Movement');
 const Maintenance = require('../models/Maintenance');
 const Inquiry = require('../models/Inquiry');
-const User = require('../models/User');
-const mongoose = require('mongoose');
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
-const canEdit = authorize('admin', 'personnel');
-const NO_DEPARTMENT = new mongoose.Types.ObjectId('000000000000000000000000');
-const scoped = (req) => req.user.role === 'admin' ? {} : { department: req.user.department || NO_DEPARTMENT };
 const equipmentPopulate = [
   { path: 'department', select: 'name code' },
   { path: 'room', select: 'room_code name building' }
@@ -27,26 +22,12 @@ router.get('/departments', protect, wrap(async (req, res) => {
   const data = await Department.find().populate('parent', 'name code').sort({ kind: 1, name: 1 });
   result(res, data);
 }));
-router.post('/departments', protect, canEdit, wrap(async (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'เฉพาะผู้ดูแลระบบเท่านั้น' });
+router.post('/departments', protect, wrap(async (req, res) => {
   result(res, await Department.create(req.body), 201);
-}));
-router.get('/users', protect, wrap(async (req, res) => {
-  const filter = req.user.role === 'admin' ? {} : { department: req.user.department || NO_DEPARTMENT };
-  result(res, await User.find(filter).select('name_sur username role department').populate('department', 'name code').sort({ name_sur: 1 }));
-}));
-router.put('/users/:id', protect, authorize('admin'), wrap(async (req, res) => {
-  const updates = {};
-  if (req.body.role) updates.role = req.body.role;
-  if (Object.prototype.hasOwnProperty.call(req.body, 'department')) updates.department = req.body.department || null;
-  const data = await User.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true })
-    .select('name_sur username role department').populate('department', 'name code');
-  if (!data) return res.status(404).json({ success: false, message: 'ไม่พบผู้ใช้' });
-  result(res, data);
 }));
 
 router.get('/movements', protect, wrap(async (req, res) => {
-  const equipmentIds = await Equipment.find(scoped(req)).distinct('_id');
+  const equipmentIds = await Equipment.distinct('_id');
   const data = await Movement.find({ equipment: { $in: equipmentIds } })
     .populate('equipment', 'name barcode_Number')
     .populate('fromRoom toRoom', 'room_code name')
@@ -55,8 +36,8 @@ router.get('/movements', protect, wrap(async (req, res) => {
     .sort({ movedAt: -1 }).limit(200);
   result(res, data);
 }));
-router.post('/movements', protect, canEdit, wrap(async (req, res) => {
-  const equipment = await Equipment.findOne({ _id: req.body.equipment, ...scoped(req) });
+router.post('/movements', protect, wrap(async (req, res) => {
+  const equipment = await Equipment.findById(req.body.equipment);
   if (!equipment) return res.status(404).json({ success: false, message: 'ไม่พบครุภัณฑ์' });
   const room = await Room.findById(req.body.toRoom);
   if (!room) return res.status(404).json({ success: false, message: 'ไม่พบห้องปลายทาง' });
@@ -64,9 +45,6 @@ router.post('/movements', protect, canEdit, wrap(async (req, res) => {
     return res.status(400).json({ success: false, message: 'ครุภัณฑ์อยู่ในห้องนี้แล้ว' });
   }
   const toDepartment = room.department || req.body.toDepartment || equipment.department;
-  if (req.user.role !== 'admin' && req.user.department && String(toDepartment) !== String(req.user.department)) {
-    return res.status(403).json({ success: false, message: 'ไม่สามารถย้ายข้ามหน่วยงานได้' });
-  }
   const movement = await Movement.create({
     equipment: equipment._id,
     fromRoom: equipment.room,
@@ -84,15 +62,15 @@ router.post('/movements', protect, canEdit, wrap(async (req, res) => {
 }));
 
 router.get('/maintenance', protect, wrap(async (req, res) => {
-  const equipmentIds = await Equipment.find(scoped(req)).distinct('_id');
+  const equipmentIds = await Equipment.distinct('_id');
   const data = await Maintenance.find({ equipment: { $in: equipmentIds } })
     .populate('equipment', 'name barcode_Number nextInspectionDate')
     .populate('createdBy', 'name_sur')
     .sort({ scheduledAt: -1 }).limit(200);
   result(res, data);
 }));
-router.post('/maintenance', protect, canEdit, wrap(async (req, res) => {
-  const equipment = await Equipment.findOne({ _id: req.body.equipment, ...scoped(req) });
+router.post('/maintenance', protect, wrap(async (req, res) => {
+  const equipment = await Equipment.findById(req.body.equipment);
   if (!equipment) return res.status(404).json({ success: false, message: 'ไม่พบครุภัณฑ์' });
   const data = await Maintenance.create({ ...req.body, createdBy: req.user._id });
   if (data.status === 'in_progress') {
@@ -102,8 +80,8 @@ router.post('/maintenance', protect, canEdit, wrap(async (req, res) => {
   await data.populate('equipment', 'name barcode_Number');
   result(res, data, 201);
 }));
-router.put('/maintenance/:id', protect, canEdit, wrap(async (req, res) => {
-  const equipmentIds = await Equipment.find(scoped(req)).distinct('_id');
+router.put('/maintenance/:id', protect, wrap(async (req, res) => {
+  const equipmentIds = await Equipment.distinct('_id');
   const data = await Maintenance.findOneAndUpdate(
     { _id: req.params.id, equipment: { $in: equipmentIds } },
     { status: req.body.status, completedAt: req.body.status === 'completed' ? new Date() : undefined, cost: req.body.cost },
@@ -127,12 +105,12 @@ router.post('/inquiries', wrap(async (req, res) => {
   const data = await Inquiry.create({ kind, name, organization, email, phone, message, equipmentCode, preferredDate });
   result(res, { id: data._id, status: data.status }, 201);
 }));
-router.get('/inquiries', protect, canEdit, wrap(async (req, res) => {
+router.get('/inquiries', protect, wrap(async (req, res) => {
   result(res, await Inquiry.find().sort({ createdAt: -1 }).limit(200));
 }));
 
 router.get('/insights', protect, wrap(async (req, res) => {
-  const items = await Equipment.find(scoped(req)).populate(equipmentPopulate);
+  const items = await Equipment.find().populate(equipmentPopulate);
   const now = new Date();
   const days = (date) => Math.ceil((new Date(date) - now) / 86400000);
   const data = items.map((item) => {

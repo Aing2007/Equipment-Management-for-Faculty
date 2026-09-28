@@ -7,17 +7,17 @@ const {
     deleteEquipment
 } = require('../controllers/equipments');
 
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.route('/')
     .get(protect, getEquipments)
-    .post(protect, authorize('admin', 'personnel'), createEquipment);
+    .post(protect, createEquipment);
 
 router.route('/:id')
     .get(protect, getEquipment)
-    .put(protect, authorize('admin', 'personnel'), updateEquipment)
-    .delete(protect, authorize('admin', 'personnel'), deleteEquipment);
+    .put(protect, updateEquipment)
+    .delete(protect, deleteEquipment);
 
 module.exports = router;
