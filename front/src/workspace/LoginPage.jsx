@@ -84,6 +84,7 @@ export default function LoginPage() {
               <button type="button" onClick={() => changeMode('signup')}>สมัครบัญชีใหม่</button>
               <button type="button" onClick={() => changeMode('reset')}>ลืมรหัสผ่าน?</button>
             </>}
+            {mode === 'login' && <button type="button" className="button secondary full guest-login-button" onClick={() => navigate('/guest')}>เยี่ยมชมโดยไม่ลงทะเบียน</button>}
             {mode !== 'login' && <button type="button" onClick={() => changeMode('login')}>กลับไปเข้าสู่ระบบ</button>}
           </div>
           {mode === 'reset' && <small className="auth-prototype-note">การกู้คืนต้นแบบยืนยันด้วย Username เท่านั้น ผู้ที่ทราบ Username สามารถตั้งรหัสผ่านใหม่ได้</small>}

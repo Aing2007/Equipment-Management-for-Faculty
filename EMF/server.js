@@ -12,6 +12,7 @@ const equipmentRoutes = require('./routes/equipments');
 const roomRoutes = require('./routes/rooms');
 const operationsRoutes = require('./routes/operations');
 const assistantRoutes = require('./routes/assistant');
+const publicRoutes = require('./routes/public');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/v1/equipments', equipmentRoutes);
 app.use('/api/v1/rooms', roomRoutes);
 app.use('/api/v1', operationsRoutes);
 app.use('/api/v1/assistant', assistantRoutes);
+app.use('/api/v1/public', publicRoutes);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 const frontendDist = path.join(__dirname, '..', 'front', 'dist');

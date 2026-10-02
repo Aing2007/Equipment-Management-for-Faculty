@@ -228,6 +228,7 @@ function Requests({ data }) {
 export default function Workspace() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isGuest = location.pathname.startsWith('/guest');
   const section = location.pathname.split('/')[2] || 'overview';
   const [user, setUser] = useState(null);
   const [data, setData] = useState(initialData);
@@ -237,9 +238,18 @@ export default function Workspace() {
   const [modal, setModal] = useState(null);
   const [selected, setSelected] = useState(null);
   const [navOpen, setNavOpen] = useState(false);
-  function go(id) { navigate(id === 'overview' ? '/app' : `/app/${id}`); setNavOpen(false); }
+  const [guestNotice, setGuestNotice] = useState('');
+  const guestWriteMessage = 'หากต้องการแก้ไขข้อมูล โปรดลงทะเบียน/เข้าสู่ระบบ';
+  function go(id) { navigate(`${isGuest ? '/guest' : '/app'}${id === 'overview' ? '' : `/${id}`}`); setNavOpen(false); }
   async function load() {
     try {
+      if (isGuest) {
+        const guestData = await api('/public/workspace');
+        setUser({ name_sur: 'ผู้เยี่ยมชม' });
+        setData({ ...initialData, ...guestData });
+        setError('');
+        return true;
+      }
       const [me, equipments, rooms, departments, movements, maintenance, inquiries] = await Promise.all([
         api('/auth/me'), api('/equipments'), api('/rooms'), api('/departments'), api('/movements'),
         api('/maintenance'), api('/inquiries')
@@ -249,13 +259,21 @@ export default function Workspace() {
       setError('');
       return true;
     } catch (cause) {
-      if (cause.message.includes('401') || cause.message.includes('token')) { clearToken(); navigate('/login'); }
+      if (!isGuest && (cause.message.includes('401') || cause.message.includes('token'))) { clearToken(); navigate('/login'); }
       else setError(cause.message);
       return false;
     } finally { setLoading(false); }
   }
-  useEffect(() => { if (!getToken()) navigate('/login'); else void load(); }, []);
+  useEffect(() => { if (!isGuest && !getToken()) navigate('/login'); else void load(); }, []);
+  function requestWriteAccess() {
+    if (isGuest) {
+      setGuestNotice(guestWriteMessage);
+      return false;
+    }
+    return true;
+  }
   async function save(kind, payload, id) {
+    if (!requestWriteAccess()) return false;
     setBusy(true); setError('');
     try {
       await api(`/${kind}${id ? `/${id}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
@@ -267,17 +285,31 @@ export default function Workspace() {
     finally { setBusy(false); }
   }
   async function completeTask(task) {
+    if (!requestWriteAccess()) return;
     setError('');
     try {
       await api(`/maintenance/${task._id}`, { method: 'PUT', body: JSON.stringify({ status: 'completed', cost: task.cost || 0 }) });
       await load();
     } catch (cause) { setError(cause.message); }
   }
-  function logout() { clearToken(); navigate('/login'); }
+  function logout() {
+    if (isGuest) navigate('/login');
+    else { clearToken(); navigate('/login'); }
+  }
   const currentTitle = menu.find((entry) => entry.id === section)?.label || 'ภาพรวม';
-  if (!getToken()) return null;
-  return <div className="workspace">
-    <aside className={`sidebar ${navOpen ? 'open' : ''}`}><div className="sidebar-top"><Link to="/app" className="sidebar-brand"><strong>EMF</strong><span>Faculty Asset</span></Link><button className="icon-button sidebar-close" onClick={() => setNavOpen(false)} aria-label="ปิดเมนู"><X /></button></div><nav aria-label="เมนูระบบ">{menu.map((entry) => <button key={entry.id} className={`nav-item ${section === entry.id ? 'selected' : ''}`} onClick={() => go(entry.id)}><entry.icon size={19} strokeWidth={1.8} />{entry.label}</button>)}</nav><div className="sidebar-bottom"><div className="sidebar-help"><span><Sparkles size={18} /></span><strong>ระบบบริหารครุภัณฑ์</strong><p>ข้อมูลสินทรัพย์ที่ค้นหาและติดตามได้</p></div><button className="nav-item" onClick={logout}><LogOut size={19} /> ออกจากระบบ</button></div></aside>
+  if (!isGuest && !getToken()) return null;
+  return <div className="workspace" onClickCapture={(event) => {
+    if (!isGuest) return;
+    const button = event.target.closest('button');
+    const label = button?.textContent.trim() || '';
+    if (/^(เพิ่ม|บันทึก|แก้ไขข้อมูล|เสร็จสิ้น)/.test(label)) {
+      event.preventDefault();
+      event.stopPropagation();
+      setGuestNotice(guestWriteMessage);
+    }
+  }}>
+    {guestNotice && <div className="guest-write-notice" role="alert">{guestNotice}<button className="icon-button" onClick={() => setGuestNotice('')} aria-label="ปิดข้อความ"><X size={18} /></button></div>}
+    <aside className={`sidebar ${navOpen ? 'open' : ''}`}><div className="sidebar-top"><Link to={isGuest ? '/guest' : '/app'} className="sidebar-brand"><strong>EMF</strong><span>Faculty Asset</span></Link><button className="icon-button sidebar-close" onClick={() => setNavOpen(false)} aria-label="ปิดเมนู"><X /></button></div><nav aria-label="เมนูระบบ">{menu.map((entry) => <button key={entry.id} className={`nav-item ${section === entry.id ? 'selected' : ''}`} onClick={() => go(entry.id)}><entry.icon size={19} strokeWidth={1.8} />{entry.label}</button>)}</nav><div className="sidebar-bottom"><div className="sidebar-help"><span><Sparkles size={18} /></span><strong>ระบบบริหารครุภัณฑ์</strong><p>ข้อมูลสินทรัพย์ที่ค้นหาและติดตามได้</p></div><button className="nav-item" onClick={logout}><LogOut size={19} /> {isGuest ? 'เข้าสู่ระบบ' : 'ออกจากระบบ'}</button></div></aside>
     {navOpen && <button className="sidebar-scrim" onClick={() => setNavOpen(false)} aria-label="ปิดเมนู" />}
     <div className="work-main"><header className="work-topbar"><div className="work-top-left"><button className="icon-button work-menu" onClick={() => setNavOpen(true)} aria-label="เปิดเมนู"><Menu /></button><div><strong>ระบบบริหารจัดการครุภัณฑ์</strong><small>Faculty Asset Management System</small></div></div><div className="work-top-right"><span className="top-location">{currentTitle}</span><span className="avatar">{user?.name_sur?.slice(0, 1) || 'U'}</span><span className="user-name">{user?.name_sur || 'ผู้ใช้งาน'}<small>ผู้ใช้ทั่วไป</small></span></div></header>
     <main className="work-content">

@@ -18,6 +18,7 @@ function App() {
         <Route path="/" element={<EntryRedirect />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/app/*" element={<Workspace />} />
+        <Route path="/guest/*" element={<Workspace />} />
         <Route path="*" element={<EntryRedirect />} />
       </Routes>
     </BrowserRouter>
